@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { lstat, readFile, realpath } from 'node:fs/promises';
+import { join, relative, sep } from 'node:path';
 import type { DiffFile } from '@shared/types';
 
 const execFileAsync = promisify(execFile);
@@ -55,10 +55,31 @@ async function getUntrackedDiff(repoPath: string): Promise<string> {
     .map((line) => line.slice(3).trim())
     .filter(Boolean);
 
+  const repoRealPath = await realpath(repoPath).catch(() => repoPath);
+
   const chunks = await Promise.all(
     paths.map(async (path) => {
       try {
-        const content = await readFile(join(repoPath, path));
+        const fullPath = join(repoPath, path);
+
+        // An untracked path can be a symlink (git reports the link itself
+        // without following it, e.g. "?? leak -> /etc/passwd"). readFile
+        // below *does* follow symlinks, so a maliciously crafted repo could
+        // otherwise trick us into reading and exfiltrating (into the LLM
+        // prompt, the UI, and disk history) any file the OS user can read.
+        // Skip anything that isn't a plain regular file, and independently
+        // confirm the resolved real path never leaves the repo directory.
+        const stat = await lstat(fullPath);
+        if (!stat.isFile()) {
+          return `diff --git a/${path} b/${path}\nnew file (not a regular file; skipped)\n`;
+        }
+        const realTarget = await realpath(fullPath);
+        const rel = relative(repoRealPath, realTarget);
+        if (rel.startsWith('..') || rel.split(sep).includes('..')) {
+          return `diff --git a/${path} b/${path}\nnew file (resolves outside the repo; skipped)\n`;
+        }
+
+        const content = await readFile(fullPath);
         if (content.includes(0) || content.byteLength > MAX_UNTRACKED_FILE_BYTES) {
           // Binary or too large to usefully review inline; note its
           // existence without dumping unreadable/oversized content.

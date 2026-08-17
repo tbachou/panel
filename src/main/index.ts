@@ -21,7 +21,9 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
     },
   });
 
@@ -30,6 +32,11 @@ function createWindow(): void {
     void shell.openExternal(details.url);
     return { action: 'deny' };
   });
+  // Defense in depth: the app never navigates itself after the initial
+  // load (this only fires for in-page-initiated navigation, not our own
+  // loadURL/loadFile call below), so block it outright rather than trust
+  // that nothing rendered from repo/LLM content can ever trigger one.
+  window.webContents.on('will-navigate', (event) => event.preventDefault());
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     void window.loadURL(process.env['ELECTRON_RENDERER_URL']);
