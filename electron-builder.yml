@@ -1,0 +1,23 @@
+appId: com.tonychou.panel
+productName: Panel
+directories:
+  output: release
+files:
+  - out/**/*
+# skills/*.md are read from disk at runtime (see src/main/skills.ts), not
+# bundled into the JS — extraResources copies them into the packaged app's
+# Resources folder, where app.isPackaged's path resolves.
+extraResources:
+  - from: skills
+    to: skills
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.developer-tools
+  # No Apple Developer account yet for this early beta — skip code signing
+  # entirely rather than let electron-builder try to auto-discover an
+  # identity and fail. Testers see an "unidentified developer" Gatekeeper
+  # warning and right-click Open the first time; acceptable for an
+  # invite-only beta, revisit if this goes to wider distribution.
+  identity: null
