@@ -2,15 +2,20 @@ import Anthropic from '@anthropic-ai/sdk';
 import { randomUUID } from 'node:crypto';
 import type { AgentId, Finding, Severity } from '@shared/types';
 import { loadOrchestratorSkill, loadReviewerSkill } from './skills';
+import { resolveApiKey } from './keystore';
 
 const MODEL = 'claude-sonnet-4-5';
 
 let client: Anthropic | null = null;
-function getClient(): Anthropic {
-  if (!client) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set.');
+let cachedKey: string | null = null;
+
+/** Re-checks the resolved key each call (cheap) so a key entered mid-session takes effect without a restart. */
+async function getClient(): Promise<Anthropic> {
+  const apiKey = await resolveApiKey();
+  if (!apiKey) throw new Error('No Anthropic API key set. Add one in Panel\'s settings.');
+  if (!client || apiKey !== cachedKey) {
     client = new Anthropic({ apiKey });
+    cachedKey = apiKey;
   }
   return client;
 }
@@ -49,7 +54,8 @@ const REVIEWER_TOOL: Anthropic.Tool = {
 };
 
 async function callTool(system: string, userContent: string, tool: Anthropic.Tool): Promise<RawFinding[]> {
-  const response = await getClient().messages.create({
+  const client = await getClient();
+  const response = await client.messages.create({
     model: MODEL,
     max_tokens: 4096,
     system,

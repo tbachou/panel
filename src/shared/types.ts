@@ -47,4 +47,8 @@ export const IPC = {
   runReview: 'panel:runReview',
   agentProgress: 'panel:agentProgress',
   reviewHistory: 'panel:reviewHistory',
+  clearHistory: 'panel:clearHistory',
+  hasApiKey: 'panel:hasApiKey',
+  setApiKey: 'panel:setApiKey',
+  clearApiKey: 'panel:clearApiKey',
 } as const;

@@ -6,7 +6,8 @@ import { is } from '@electron-toolkit/utils';
 import { IPC, type AgentId, type Finding, type ReviewResult } from '@shared/types';
 import { getCurrentBranch, getDiff, isGitRepo } from './git';
 import { runOrchestrator, runReviewer } from './agents';
-import { loadHistory, saveReview } from './store';
+import { clearHistory, loadHistory, saveReview } from './store';
+import { clearStoredApiKey, hasStoredApiKey, resolveApiKey, setStoredApiKey } from './keystore';
 
 type RawFindings = Omit<Finding, 'id' | 'agent'>[];
 
@@ -113,4 +114,21 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC.reviewHistory, async () => loadHistory());
+  ipcMain.handle(IPC.clearHistory, async () => clearHistory());
+
+  // Gate on whatever key would actually resolve at call time (stored OR
+  // ANTHROPIC_API_KEY from .env), not just the persisted store — a
+  // dev-mode .env key should skip onboarding just as validly as one
+  // entered through the UI.
+  ipcMain.handle(IPC.hasApiKey, async () => (await resolveApiKey()) !== null);
+
+  ipcMain.handle(IPC.setApiKey, async (_event, key: string) => {
+    if (!key.trim()) throw new Error('API key cannot be empty.');
+    await setStoredApiKey(key);
+  });
+
+  ipcMain.handle(IPC.clearApiKey, async () => {
+    await clearStoredApiKey();
+    return hasStoredApiKey();
+  });
 }

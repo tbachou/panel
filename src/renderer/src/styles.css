@@ -24,28 +24,58 @@ body {
   overflow: hidden;
 }
 
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* macOS hiddenInset windows have no native title bar, so nothing is
+   draggable unless a region explicitly opts in. This strip spans the full
+   width (left padding clears the traffic lights) so the window can be
+   dragged from anywhere along the top, not just the sidebar. */
+.titlebar {
+  height: 38px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding-left: 78px;
+  -webkit-app-region: drag;
+}
+
 .app {
   display: flex;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar {
   width: 240px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border-right: 1px solid var(--border);
   padding: 20px 16px;
-  overflow-y: auto;
-  -webkit-app-region: drag;
+  overflow: hidden;
 }
 
-.sidebar button {
-  -webkit-app-region: no-drag;
+.sidebar__history {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar__change-key {
+  width: 100%;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  background: none;
 }
 
 .sidebar__title {
   font-size: 18px;
-  margin: 24px 0 0;
+  margin: 0;
 }
 
 .sidebar__subtitle {
@@ -54,12 +84,32 @@ body {
   margin: 2px 0 24px;
 }
 
+.sidebar__history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 .sidebar__history h2 {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
-  margin: 0 0 8px;
+  margin: 0;
+}
+
+.sidebar__clear-history {
+  font-size: 11px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sidebar__clear-history:hover {
+  color: var(--critical);
 }
 
 .sidebar__empty {
@@ -146,6 +196,18 @@ button.primary {
   border-color: var(--accent);
   color: white;
   font-weight: 600;
+}
+
+.link-hint {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.link-hint:hover {
+  text-decoration: underline;
 }
 
 .repo-path {
@@ -312,4 +374,80 @@ button.primary {
 .severity-badge--low {
   background: rgba(107, 114, 128, 0.2);
   color: var(--low);
+}
+
+.onboarding {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboarding__card {
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onboarding__card h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.onboarding__body {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+
+.onboarding__card label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.onboarding__card input {
+  font: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--ink);
+}
+
+.onboarding__card input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.onboarding__error {
+  font-size: 12px;
+  color: var(--critical);
+  margin: 0;
+}
+
+.onboarding__link {
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.onboarding__link:hover {
+  text-decoration: underline;
+}
+
+.onboarding__skip {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+.onboarding__skip:hover {
+  color: var(--ink);
 }
