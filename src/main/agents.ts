@@ -105,10 +105,33 @@ export async function runOrchestrator(
 }
 
 function attributeAgent(finding: RawFinding, byAgent: Record<AgentId, RawFinding[]>): AgentId {
-  for (const agent of Object.keys(byAgent) as AgentId[]) {
-    if (byAgent[agent].some((raw) => raw.file === finding.file)) return agent;
+  const agents = Object.keys(byAgent) as AgentId[];
+
+  // file+line alone often matches more than one specialist (they all review the same
+  // diff, so multiple agents commonly flag the same line for different reasons) - use
+  // summary overlap to pick the closest one among those candidates.
+  const onSameLine = agents.filter((agent) =>
+    byAgent[agent].some((raw) => raw.file === finding.file && raw.line === finding.line),
+  );
+
+  let best: { agent: AgentId; score: number } | null = null;
+  for (const agent of onSameLine.length > 0 ? onSameLine : agents) {
+    for (const raw of byAgent[agent]) {
+      if (raw.file !== finding.file) continue;
+      const score = summaryOverlap(raw.summary, finding.summary);
+      if (!best || score > best.score) best = { agent, score };
+    }
   }
-  return 'correctness';
+  return best?.agent ?? 'correctness';
+}
+
+function summaryOverlap(a: string, b: string): number {
+  const wordsA = new Set(a.toLowerCase().match(/[a-z]+/g) ?? []);
+  const wordsB = new Set(b.toLowerCase().match(/[a-z]+/g) ?? []);
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  let shared = 0;
+  for (const word of wordsA) if (wordsB.has(word)) shared++;
+  return shared / Math.max(wordsA.size, wordsB.size);
 }
 
 /** Runs all three specialists concurrently — this is the "multiple agents at once" step. */
