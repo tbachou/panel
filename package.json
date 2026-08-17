@@ -1,6 +1,6 @@
 {
   "name": "panel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first, multi-agent code review companion. Point it at a diff; specialized Claude agents review it in parallel.",
   "main": "./out/main/index.js",
   "author": "Tony Chou",
