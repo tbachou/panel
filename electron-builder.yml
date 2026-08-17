@@ -10,14 +10,24 @@ files:
 extraResources:
   - from: skills
     to: skills
+# Ad-hoc codesign the .app after packing, before it's zipped/dmg'd - see
+# build/afterPack.js for why (a totally unsigned app gets macOS's scarier
+# "damaged, move to Trash" Gatekeeper dialog on recent macOS, not the
+# recoverable "unidentified developer" one).
+afterPack: build/afterPack.js
 mac:
   target:
     - dmg
     - zip
+  # No version in the filename: the portfolio site links to
+  # /releases/latest/download/<this name>, GitHub's stable "always the
+  # newest release" URL. That only resolves if the asset name is
+  # identical release over release - keep this template unchanged so
+  # future releases don't need a portfolio-side edit to pick them up.
+  artifactName: '${productName}-${arch}.${ext}'
   category: public.app-category.developer-tools
-  # No Apple Developer account yet for this early beta — skip code signing
-  # entirely rather than let electron-builder try to auto-discover an
-  # identity and fail. Testers see an "unidentified developer" Gatekeeper
-  # warning and right-click Open the first time; acceptable for an
-  # invite-only beta, revisit if this goes to wider distribution.
+  # No Apple Developer account yet for this early beta — skip real code
+  # signing (no paid identity to sign with regardless). afterPack.js applies
+  # a free ad-hoc signature instead, which is enough to avoid the "damaged"
+  # dialog even though it still won't pass notarization.
   identity: null
